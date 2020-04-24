@@ -1,3 +1,6 @@
+class BMPException(BaseException):
+    pass
+
 class BMP(object):
     def __init__(self, filename):
         self.__filename = filename
@@ -11,8 +14,7 @@ class BMP(object):
                 n |= bytes.pop()
             return int(n)
 
-        import os
-        assert os.exist(filename), 'No Such File.'
-        
-        with open(self.__filename, 'rb') as f:
-            img_bytes = list(bytearray(f.read()))
+        try:
+            with open(self.__filename, 'rb') as f:
+                img_bytes = list(bytearray(f.read()))
+        except : raise BMPException("File Not Found!")
