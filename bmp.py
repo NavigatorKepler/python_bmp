@@ -14,7 +14,7 @@ class BMP(object):
                 n |= bytes.pop()
             return int(n)
 
-        try:
+        try:                #无法判断文件是否存在，只能try
             with open(self.__filename, 'rb') as f:
                 img_bytes = list(bytearray(f.read()))
         except : raise BMPException("File Not Found!")
