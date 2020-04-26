@@ -17,13 +17,16 @@ errors_cn = [
     "暂不支持压缩。",
 ]
 
-
 class BMP(object):
-    def __init__(self, filename, lang='en') :
+    def __init__(self, filename, lang='cn') :
         self.__filename = filename
         self.__data = self.__bmpprocess(filename)
         if lang == 'en':
             self.__errors = errors_en
+        elif lang == 'cn':
+            self.__errors = errors_cn
+        else:
+            self.__errors = errors_cn
 
     def __bmpprocess(self, filename):
         try:                #无法判断文件是否存在，只能try
@@ -48,8 +51,12 @@ class BMP(object):
             print(self.__bfSize)
             raise BMPException(self.__errors[2])
 
-        self.__biWidth = unpack("<i", self.__stream[18:22])[0]      # 图像的宽度 单位 像素
-        self.__biHeight = unpack("<i", self.__stream[22:26])[0]     # 图像的高度 单位 像素
+        self.__biWidth = unpack("<ib", self.__stream[18:22])[0]      # 图像的宽度 单位 像素
+
+        self.__biHeight = unpack("<ib", self.__stream[22:26])[0]     # 图像的高度 单位 像素
+        if self.__biHeight > 0 : self.__hreversed = True       #高度反序
+        else : self.__hreversed = False                        #高度顺序
+
         self.__biPlains = unpack("<h", self.__stream[26:28])[0]     # 说明颜色平面数 总设为 1
         self.__biBitCount = unpack("<h", self.__stream[28:30])[0]   # 说明每像素比特数
         if self.__biBitCount != 24:
@@ -67,36 +74,39 @@ class BMP(object):
         self.__biClrImportant = unpack("<i", self.__stream[50:54])[0] # 对图像显示有重要影响的颜色索引的数目
         self.__bmp_data = []
 
+        self.__bitmap_stream = self.__stream[54:]
+        self.__temp_cursor = 0
         for height in range(self.__biHeight) :
             bmp_data_row = []
             # 四字节填充位检测
             count = 0
             for width in range(self.__biWidth) :
-                bmp_data_row.append([unpack("<B", file.read(1))[0],     #B
-                                     unpack("<B", file.read(1))[0],     #G
-                                     unpack("<B", file.read(1))[0]])    #R
-                count = count + 3
+                bmp_data_row.append([unpack("<B", self.__bitmap_stream[self.__temp_cursor])[0],     #B
+                                     unpack("<B", self.__bitmap_stream[self.__temp_cursor + 1])[0],     #G
+                                     unpack("<B", self.__bitmap_stream[self.__temp_cursor + 2])[0]])    #R
+                count += 3
+                self.__temp_cursor += 3
             # bmp 四字节对齐原则
             while count % 4 != 0 :
-                file.read(1)
-                count = count + 1
-            self.bmp_data.append(bmp_data_row)
-        self.bmp_data.reverse()
+                count += 1
+                self.__temp_cursor += 1
+            self.__bmp_data.append(bmp_data_row)
+        if self.__hreversed : self.__bmp_data.reverse()
         # R, G, B 三个通道
-        self.R = []
-        self.G = []
-        self.B = []
+        self.__R = []
+        self.__G = []
+        self.__B = []
 
-        for row in range(self.biHeight) :
+        for row in range(self.__biHeight) :
             R_row = []
             G_row = []
             B_row = []
-            for col in range(self.biWidth) :
-                B_row.append(self.bmp_data[row][col][0])
-                G_row.append(self.bmp_data[row][col][1])
-                R_row.append(self.bmp_data[row][col][2])
-            self.B.append(B_row)
-            self.G.append(G_row)
-            self.R.append(R_row)
+            for col in range(self.__biWidth) :
+                B_row.append(self.__bmp_data[row][col][0])
+                G_row.append(self.__bmp_data[row][col][1])
+                R_row.append(self.__bmp_data[row][col][2])
+            self.__B.append(B_row)
+            self.__G.append(G_row)
+            self.__R.append(R_row)
         
         del self.__stream
