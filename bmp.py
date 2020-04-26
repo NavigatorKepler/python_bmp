@@ -32,27 +32,25 @@ class BMP(object):
         self.__bmpprocess(filename)
 
     def __bmpprocess(self, filename):
-        try:  # 无法直接判断文件是否存在，只能try
+        try:  # upy下无法用os直接判断文件是否存在，故try
             with open(self.__filename, 'rb') as f:
                 self.__stream = f.read()
         except:
             raise BMPException(self.__errors[0])
 
-        # 读取 bmp 文件的文件头    14 字节
-        self.__bfType = unpack("<h", self.__stream[0:2])[0]
-            # 0x4d42 对应BM 表示这是Windows支持的位图格式
+        # 文件头部分
+        self.__bfType = unpack("<h", self.__stream[0:2])[0]         # BM标识
         if self.__bfType != 0x4d42:
             raise BMPException(self.__errors[1])
 
-        self.__bfSize = unpack("<i", self.__stream[2:6])[0]         # 位图文件大小
+        self.__bfSize = unpack("<i", self.__stream[2:6])[0]         # 文件大小
         self.__bfRsv1 = unpack("<h", self.__stream[6:8])[0]         # 保留字段
         self.__bfRsv2 = unpack("<h", self.__stream[8:10])[0]        # 保留字段
-        self.__bfOffBits = unpack("<i", self.__stream[10:14])[0]
-        # 偏移量 从文件头到位图数据需偏移多少字节
-        print(self.__bfOffBits)
+        self.__bfOffBits = unpack("<i", self.__stream[10:14])[0]    # 偏移量
+        # print(self.__bfOffBits)
 
-        # 读取 bmp 文件的位图信息头 40 字节
-        self.__biSize = unpack("<i", self.__stream[14:18])[0]       # 文件头的字节数
+        # 信息头部分
+        self.__biSize = unpack("<i", self.__stream[14:18])[0]       # 信息头大小
         if self.__biSize not in (40, 108, 124):
             raise BMPException(self.__errors[2])
 
@@ -64,7 +62,7 @@ class BMP(object):
         else:
             self.__hreversed = False  # 高度顺序
 
-        self.__biPlains = unpack("<h", self.__stream[26:28])[0]     # 颜色平面数 总设为 1
+        self.__biPlains = unpack("<h", self.__stream[26:28])[0]     # 颜色平面数总为1
         self.__biBitCount = unpack("<h", self.__stream[28:30])[0]   # 每像素比特数
         if self.__biBitCount != 24:
             raise BMPException(self.__errors[2])
@@ -141,6 +139,3 @@ class BMP(object):
 
     def get_pixels(self):
         return self.__bmp_data
-
-a = BMP("0.bmp")
-print(len(a.get_pixels()[0]))
