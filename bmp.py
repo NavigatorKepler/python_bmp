@@ -1,25 +1,7 @@
+from struct import unpack
+
 class BMPException(BaseException):
     pass
-
-class BMP(object):
-    def __init__(self, filename):
-        self.__filename = filename
-        self.__data = self.__bmpprocess(filename)
-    
-    def __bmpprocess(self, filename):
-        def little_endian_bytes_to_int(bytes):      #小端转整数
-            n = 0x00
-            while len(bytes) > 0:
-                n <<= 8
-                n |= bytes.pop()
-            return int(n)
-
-        try:                #无法判断文件是否存在，只能try
-            with open(self.__filename, 'rb') as f:
-                img_bytes = list(bytearray(f.read()))
-        except : raise BMPException("File Not Found!")
-
-from struct import unpack
 
 class ReadBMPFile(object):
     def __init__(self, filename) :
@@ -27,10 +9,12 @@ class ReadBMPFile(object):
         self.__data = self.__bmpprocess(filename)
 
     def __bmpprocess(self, filename):
-        # 读取 bmp 文件的文件头    14 字节
-        with open(self.__filename, "rb") as f:
-            self.__stream = f.read()
+        try:                #无法判断文件是否存在，只能try
+            with open(self.__filename, 'rb') as f:
+                self.__stream = f.read()
+        except : raise BMPException("File Not Found!")
 
+        # 读取 bmp 文件的文件头    14 字节
         self.__bfType = unpack("<h", self.__stream[0:2])[0]       # 0x4d42 对应BM 表示这是Windows支持的位图格式
         if self.__bfType != 0x4d42:
             raise BMPException("Not a valid BMP file!")
@@ -45,7 +29,7 @@ class ReadBMPFile(object):
         self.__biSize = unpack("<i", self.__stream[14:18])[0]       # 所需要的字节数
         if self.__bfSize != 40:
             print(self.__bfSize)
-            raise BMPException("BMP Not Supported!")
+            raise BMPException("Unsupported Format!")
 
         self.__biWidth = unpack("<i", self.__stream[18:22])[0]      # 图像的宽度 单位 像素
         self.__biHeight = unpack("<i", self.__stream[22:26])[0]     # 图像的高度 单位 像素
@@ -71,7 +55,9 @@ class ReadBMPFile(object):
             # 四字节填充位检测
             count = 0
             for width in range(self.__biWidth) :
-                bmp_data_row.append([unpack("<B", file.read(1))[0], unpack("<B", file.read(1))[0], unpack("<B", file.read(1))[0]])
+                bmp_data_row.append([unpack("<B", file.read(1))[0],     #B
+                                     unpack("<B", file.read(1))[0],     #G
+                                     unpack("<B", file.read(1))[0]])    #R
                 count = count + 3
             # bmp 四字节对齐原则
             while count % 4 != 0 :
@@ -79,7 +65,6 @@ class ReadBMPFile(object):
                 count = count + 1
             self.bmp_data.append(bmp_data_row)
         self.bmp_data.reverse()
-        file.close()
         # R, G, B 三个通道
         self.R = []
         self.G = []
