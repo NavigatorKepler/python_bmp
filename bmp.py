@@ -44,8 +44,8 @@ class BMP(object):
             raise BMPException(self.__errors[1])
 
         self.__bfSize = unpack("<i", self.__stream[2:6])[0]         # 文件大小
-        self.__bfRsv1 = unpack("<h", self.__stream[6:8])[0]         # 保留字段
-        self.__bfRsv2 = unpack("<h", self.__stream[8:10])[0]        # 保留字段
+        # self.__bfRsv1 = unpack("<h", self.__stream[6:8])[0]         # 保留字段
+        # self.__bfRsv2 = unpack("<h", self.__stream[8:10])[0]        # 保留字段
         self.__bfOffBits = unpack("<i", self.__stream[10:14])[0]    # 偏移量
         # print(self.__bfOffBits)
 
@@ -62,7 +62,7 @@ class BMP(object):
         else:
             self.__hreversed = False  # 高度顺序
 
-        self.__biPlains = unpack("<h", self.__stream[26:28])[0]     # 颜色平面数总为1
+        # self.__biPlains = unpack("<h", self.__stream[26:28])[0]     # 颜色平面数总为1
         self.__biBitCount = unpack("<h", self.__stream[28:30])[0]   # 每像素比特数
         if self.__biBitCount != 24:
             raise BMPException(self.__errors[2])
@@ -72,24 +72,26 @@ class BMP(object):
             raise BMPException(self.__errors[3])
 
         self.__biSizeImage = unpack("<i", self.__stream[34:38])[0]    # 图像大小
-        self.__biXPelsPerMeter = unpack(
-            "<i", self.__stream[38:42])[0]  # 水平像素密度
-        self.__biYPelsPerMeter = unpack(
-            "<i", self.__stream[42:46])[0]  # 垂直像素密度
-        self.__biClrUsed = unpack("<i", self.__stream[46:50])[0]      # 索引色数
-        self.__biClrImportant = unpack("<i", self.__stream[50:54])[0]  # 重要索引色数
+        # self.__biXPelsPerMeter = unpack("<i", self.__stream[38:42])[0]  # 水平像素密度
+        # self.__biYPelsPerMeter = unpack("<i", self.__stream[42:46])[0]  # 垂直像素密度
+        # self.__biClrUsed = unpack("<i", self.__stream[46:50])[0]      # 索引色数
+        # self.__biClrImportant = unpack("<i", self.__stream[50:54])[0]  # 重要索引色数
         self.__bmp_data = []
 
         self.__bitmap_stream = self.__stream[self.__bfOffBits:]
+
+        del self.__stream
+
         self.__temp_cursor = 0
         for height in range(self.__biHeight):
             bmp_data_row = []
             # 四字节填充位检测
             count = 0
             for width in range(self.__biWidth):
-                bmp_data_row.append((self.__bitmap_stream[self.__temp_cursor],  # B
+                ready_pixel = (self.__bitmap_stream[self.__temp_cursor + 2],  # R
                                      self.__bitmap_stream[self.__temp_cursor + 1],  # G
-                                     self.__bitmap_stream[self.__temp_cursor + 2]))  # R
+                                     self.__bitmap_stream[self.__temp_cursor])  # B
+                bmp_data_row.append(ready_pixel)
                 count += 3
                 self.__temp_cursor += 3
             # bmp 四字节对齐原则
@@ -109,14 +111,13 @@ class BMP(object):
             G_row = []
             B_row = []
             for col in range(self.__biWidth):
-                B_row.append(self.__bmp_data[row][col][0])
+                R_row.append(self.__bmp_data[row][col][0])
                 G_row.append(self.__bmp_data[row][col][1])
-                R_row.append(self.__bmp_data[row][col][2])
+                B_row.append(self.__bmp_data[row][col][2])
             self.__B.append(B_row)
             self.__G.append(G_row)
             self.__R.append(R_row)
 
-        del self.__stream
         del self.__bitmap_stream
 
     def __len__(self):
@@ -139,3 +140,6 @@ class BMP(object):
 
     def get_pixels(self):
         return self.__bmp_data
+
+a = BMP('0.bmp')
+print(a.get_pixels()[0])
