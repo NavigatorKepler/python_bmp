@@ -54,13 +54,13 @@ class BMP(object):
         if self.__biSize not in (40, 108, 124):
             raise BMPException(self.__errors[2])
 
-        self.__biWidth = unpack("<i", self.__stream[18:22])[0]      # 宽度
-
-        self.__biHeight = unpack("<i", self.__stream[22:26])[0]     # 高度
-        if self.__biHeight > 0:
+        self.width = unpack("<i", self.__stream[18:22])[0]      # 宽度
+        self.height = unpack("<i", self.__stream[22:26])[0]     # 高度
+        if self.height > 0:
             self.__hreversed = True  # 高度反序
         else:
             self.__hreversed = False  # 高度顺序
+            self.height = -self.height
 
         # self.__biPlains = unpack("<h", self.__stream[26:28])[0]     # 颜色平面数总为1
         self.__biBitCount = unpack("<h", self.__stream[28:30])[0]   # 每像素比特数
@@ -83,11 +83,11 @@ class BMP(object):
         del self.__stream
 
         self.__temp_cursor = 0
-        for height in range(self.__biHeight):
+        for height in range(self.height):
             bmp_data_row = []
             # 四字节填充位检测
             count = 0
-            for width in range(self.__biWidth):
+            for width in range(self.width):
                 ready_pixel = (self.__bitmap_stream[self.__temp_cursor + 2],  # R
                                      self.__bitmap_stream[self.__temp_cursor + 1],  # G
                                      self.__bitmap_stream[self.__temp_cursor])  # B
@@ -106,11 +106,11 @@ class BMP(object):
         self.__G = []
         self.__B = []
 
-        for row in range(self.__biHeight):
+        for row in range(self.height):
             R_row = []
             G_row = []
             B_row = []
-            for col in range(self.__biWidth):
+            for col in range(self.width):
                 R_row.append(self.__bmp_data[row][col][0])
                 G_row.append(self.__bmp_data[row][col][1])
                 B_row.append(self.__bmp_data[row][col][2])
@@ -124,10 +124,10 @@ class BMP(object):
         return self.__biSizeImage
 
     def width(self):
-        return self.__biWidth
+        return self.width
 
     def height(self):
-        return self.__biHeight
+        return self.height
 
     def get_B(self):
         return self.__B
