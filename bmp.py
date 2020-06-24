@@ -140,6 +140,3 @@ class BMP(object):
 
     def get_pixels(self):
         return self.__bmp_data
-
-a = BMP('0.bmp')
-print(a.get_pixels()[0])
